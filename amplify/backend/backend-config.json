@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "assignmentapp3943d995": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false
+    }
+  }
+}
