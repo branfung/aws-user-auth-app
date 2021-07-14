@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react'
 import './App.css';
 import Amplify,  { Auth } from "aws-amplify"
 import awsconfig from "./aws-exports"
+import { Form, FormGroup, FormInput, Card, CardBody, CardTitle, Button, ButtonGroup} from 'shards-react'
+
+import "bootstrap/dist/css/bootstrap.min.css";
+import "shards-ui/dist/css/shards.min.css"
 
 Amplify.configure(awsconfig) //Base React App with AWS Amplify configured
 //decided to create my own Auth UI instead of the prebuilt one that Amplify provides 
@@ -29,7 +33,6 @@ function App() {
   const onChange = (e) => {
     e.persist()
     updateAuthState(()=>({...authState, [e.target.name]:e.target.value}))
-    // console.log(authState.username, authState.password, authState.email)
   }
 
   const signUp = async () => {
@@ -39,7 +42,12 @@ function App() {
                 console.log(result)
                 updateAuthState(()=>({...authState, authType: 'confirmRegister'}))
               })
-              .catch((err)=>console.log(err))
+              .catch((err)=>{
+                console.log(err)
+                if(err.name === "UsernameExistsException"){
+                  alert("This username already exists!")
+                }
+              })
     
   }
   const confirmSignUp = async () => {
@@ -59,7 +67,12 @@ function App() {
               console.log(result)
               updateAuthState(()=>({...authState, authType: 'loggedIn'}))
             })
-            .catch((err)=>console.log(err))
+            .catch((err)=>{
+              console.log("error data ", err)
+              if(err.name === "UserNotConfirmedException") {
+                updateAuthState(()=>({...authState, authType: 'confirmRegister'}))
+              }  
+            })
     
   }
 
@@ -70,44 +83,83 @@ function App() {
       <div className="App-header">
       {
         authType === 'register' &&      //Register form: requires > username, password & email
-        <div>
-            <h3>Register an account</h3>
-            <input name="username" onChange={onChange} placeholder="Username"></input>
-            <input name="password" onChange={onChange} type="password" placeholder="Pasword"></input>
-            <input name="email" onChange={onChange} placeholder="Email"></input>
-
-            <button onClick={signUp}>Register</button>
-            <button onClick={()=>updateAuthState(()=>({...authState, authType: 'logIn'}))}>Log In Instead</button>
-        </div>
+        <Card>
+          <CardBody>
+            <CardTitle>Register an Account</CardTitle>
+            <Form>
+              <FormGroup>
+                <FormInput name="username" onChange={onChange} placeholder="Username"/>
+              </FormGroup>
+              <FormGroup>
+                <FormInput name="password" onChange={onChange} type="password" placeholder="Pasword"/>
+              </FormGroup>
+              <FormGroup>
+                <FormInput name="email" onChange={onChange} placeholder="Email"/>
+              </FormGroup>
+            </Form>
+            <ButtonGroup>
+              <Button onClick={signUp}>Register</Button>
+              <Button theme="secondary" onClick={()=>updateAuthState(()=>({...authState, authType: 'logIn'}))}>Log In Intead</Button>
+            </ButtonGroup>
+          </CardBody>
+        </Card>
       }
       {
         authType === 'confirmRegister' &&    //Confirm registration form: requires > username & confirmation code (sent via email)
-        <div>
-            <input name="username" onChange={onChange} placeholder="Username"></input>
-            <input name="authCode" onChange={onChange} placeholder="Authorization Code"></input>
-
-            <button onClick={confirmSignUp}>Confirm Account</button>
-        </div>
+        
+        <Card>
+        <CardBody>
+          <CardTitle>Confirm your Account</CardTitle>
+          <p>Check your email for a confirmation code</p>
+          <Form>
+            <FormGroup>
+              <FormInput name="username" onChange={onChange} placeholder="Username"/>
+            </FormGroup>
+            <FormGroup>
+              <FormInput name="authCode" onChange={onChange} placeholder="Authorization Code"/>
+            </FormGroup>
+          </Form>
+          <ButtonGroup>
+            <Button onClick={confirmSignUp}>Confirm</Button>
+          </ButtonGroup>
+        </CardBody>
+      </Card>
       }
       {
         authType === 'logIn' &&       //Log in form: requires > username & password
-        <div>
-            <h3>Log into your account</h3>
-            <input name="username" onChange={onChange} placeholder="Username"></input>
-            <input name="password" onChange={onChange} type="password" placeholder="Pasword"></input>
-
-            <button onClick={signIn}>Log in</button>
-            <button onClick={()=>updateAuthState(()=>({...authState, authType: 'register'}))}>Register an account</button>
-        </div>
+        <Card>
+          <CardBody>
+            <CardTitle>Log into Account</CardTitle>
+            <Form>
+              <FormGroup>
+                <FormInput name="username" onChange={onChange} placeholder="Username"/>
+              </FormGroup>
+              <FormGroup>
+                <FormInput name="password" onChange={onChange} type="password" placeholder="Pasword"/>
+              </FormGroup>
+            </Form>
+            <ButtonGroup>
+              <Button onClick={signIn}>Log in</Button>
+              <Button theme="secondary" onClick={()=>updateAuthState(()=>({...authState, authType: 'register'}))}>Register an account</Button>
+            </ButtonGroup>
+          </CardBody>
+        </Card>
       }
       {
         authType === 'loggedIn' &&    //Logged in state: Shows content of the app after being authorized
-        <div>
-            <h1>Hello World</h1>
-            <button onClick={
-              () => Auth.signOut().then(()=>updateAuthState(()=>({...authState, authType: 'logIn'})))
-            }>Log Out</button>
-        </div>
+        
+        <Card>
+          <CardBody>
+            <CardTitle>Hello World</CardTitle>
+            <p>A link to the <a href="https://github.com/branfung/aws-user-auth-app">code</a> for this app</p>
+            <p>And a link to <a href="https://github.com/branfung">my github</a></p>
+            <ButtonGroup>
+              <Button theme="danger" onClick={
+               () => Auth.signOut().then(()=>updateAuthState(()=>({...authState, authType: 'logIn'})))
+             }>Log out</Button>
+            </ButtonGroup>
+          </CardBody>
+        </Card>
       }
 
       </div>
